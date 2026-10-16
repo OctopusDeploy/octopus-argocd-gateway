@@ -1,0 +1,35 @@
+{{- if .Values.gateway.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "octopus-argocd-gateway.gateway.roleName" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+rules:
+  - verbs:
+      - get
+      - list
+      - patch
+    apiGroups:
+      - ''
+      - 'batch'
+    resources:
+      - 'cronjobs'
+      - 'pods'
+      - 'pods/log'
+  # Leader election lease (active-passive HA). The gateway always runs leader
+  # election regardless of replica count, so these permissions are required.
+  - verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+    apiGroups:
+      - 'coordination.k8s.io'
+    resources:
+      - 'leases'
+{{- end }}

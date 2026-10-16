@@ -1,0 +1,20 @@
+registration:
+  register: true
+  serviceAccount:
+    create: true
+  octopus:
+    name: "MyNewGateway"
+    serverApiUrl: "http://localhost:8066"
+    serverAccessToken: "API-APIKEY01"
+    environments:
+      - "development"
+      - "staging"
+      - "production"
+    spaceId: "Spaces-1"
+gateway:
+    argocd:
+        serverGrpcUrl: "localhost:30857"
+        authenticationToken: "argo-auth-token"
+    octopus:
+        serverGrpcUrl: "localhost:8443"
+        serverThumbprint: "4132A0B50C2B88C6694FA30BDDF39D03A314261A"

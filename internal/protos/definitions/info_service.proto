@@ -1,0 +1,15 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "get_gateway_logs_request.proto";
+import "get_gateway_logs_response.proto";
+import "get_info_request.proto";
+import "get_info_response.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service InfoService {
+  rpc GetInfo(stream GetInfoResponse) returns (stream GetInfoRequest);
+  rpc GetGatewayLogs(stream GetGatewayLogsResponse) returns (stream GetGatewayLogsRequest);
+}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+message GetInfoResponse {
+  string request_id = 1;
+  string gateway_version = 2;
+  string helm_chart_version = 3;
+  string helm_release_name = 4;
+  string kubernetes_namespace = 5;
+  bool can_connect_to_argo_cd = 6;
+  string argo_cd_connection_error = 7;
+  string argo_cd_version = 8;
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "application_uid.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+message WatchApplicationResourcesRequest {
+  repeated WatchApplicationQuery query = 1;
+}
+
+message WatchApplicationQuery {
+  ApplicationUid application_uid = 1;
+  string application_name = 2;
+  string application_project = 3;
+  string application_namespace = 4;
+}

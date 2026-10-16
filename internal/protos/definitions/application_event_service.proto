@@ -1,0 +1,12 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "application_event_update_request.proto";
+import "application_event_update_response.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service ApplicationEventService {
+  rpc ApplicationEventUpdate(ApplicationEventUpdateRequest) returns (ApplicationEventUpdateResponse);
+}

@@ -1,0 +1,340 @@
+# Default values for octopus-argocd-gateway.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+image:
+  # -- Image name to use
+  # @section -- Image
+  repository: octopusdeploy/octopus-argocd-gateway
+  # -- Registry host to pull images from
+  # @section -- Image
+  registry: docker.io
+  # -- Image pull policy
+  # @section -- Image
+  pullPolicy: IfNotPresent
+  # -- Image tag to use
+  # @default -- `.Chart.AppVersion`
+  # @section -- Image
+  tag: ""
+  # -- Suffix to append to the image tag
+  # @section -- Image
+  tagSuffix: ""
+  # -- This is for the secrets for pulling an image from a private repository, more information can be found in the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  # @section -- Image
+  imagePullSecrets: [ ]
+
+
+# This sets the gateway application's configuration
+gateway:
+  # -- Enable debug logs
+  # @section -- Gateway
+  debug: false
+  # -- The name of a secret containing one or more base64-encoded public keys of x509 certificates used by Octopus and Argo CD that the Gateway should trust. The secret must be in the same namespace as the Gateway and all certificates must be in the PEM format.
+  # @section -- Gateway
+  serverCertificateSecretName: ""
+  # -- A list of base64-encoded public key of the self-signed x509 certificates or root CA certificates used by the target Octopus and/or Argo CD Server. Must be in the PEM format.
+  # @section -- Gateway
+  serverCertificates: []
+  octopus:
+    # -- The gRPC url (including the port) of the Octopus Deploy server to communicate with
+    # @section -- Gateway
+    serverGrpcUrl: ""
+    # -- The thumbprint of the Octopus Deploy server the gateway is communicating with.
+    # This should only be used if you wish to pin the certificate.
+    # @section -- Gateway
+    serverThumbprint: ""
+    # -- Disables TLS on the connection to the Octopus Deploy server
+    # This should only be used if your Octopus Server is running without a certificate on its gRPC listener.
+    # @section -- Gateway
+    plaintext: false
+    # -- DEPRECATED: use gateway.serverCertificates instead - The base64-encoded public key of the self-signed x509 certificate or root CA certificate used by the target Octopus Server. Must be in the PEM format.
+    # @section -- Gateway
+    serverCertificate: ""
+
+
+    # Configuration for the Octopus Deploy server health check.
+    healthCheck:
+      # -- Duration between health checks sent to the Octopus Deploy server, for example 30s or 1m. Set to 0 to disable health checks, which should only be for troubleshooting (error-recovery is limited when health checks are disabled).
+      # @section -- Gateway
+      interval: 30s
+      # -- Exit once the Octopus Deploy server has gone unanswered for this long, so the pod is restarted, for example 5m or 1h.
+      # @section -- Gateway
+      giveUpAfter: 5m
+  argocd:
+    # -- The gRPC url (including the port) of the Argo CD instance to communicate with
+    # @section -- Gateway
+    serverGrpcUrl: ""
+    # -- The bearer token used to authenticate with the Argo CD instance. If supplied, a Kubernetes secret is created to hold this token. Mutually exclusive with authenticationTokenSecretName/authenticationTokenSecretKey, and with projectAuthentication/projectAuthenticationSecretName.
+    # @section -- Gateway
+    authenticationToken: ""
+    # -- Required when authenticationToken is not set: name of an existing secret that contains the Argo CD authentication token. When authenticationToken is set, this overrides the default secret name. Mutually exclusive with projectAuthentication/projectAuthenticationSecretName.
+    # @section -- Gateway
+    authenticationTokenSecretName: ""
+    # -- Required when authenticationToken is not set: the key within the secret that holds the token. When authenticationToken is set, this overrides the default key ("token").
+    # @section -- Gateway
+    authenticationTokenSecretKey: ""
+    # -- Disable TLS on the connection to the Argo CD instance
+    # @section -- Gateway
+    plaintext: false
+    # -- Skip server certificate and domain verification on the TLS connection to the Argo CD instance
+    # @section -- Gateway
+    insecure: false
+    # -- Use the gRPC-Web protocol to connect to the Argo CD instance. Useful when the Argo CD API is behind a proxy that does not support HTTP/2.
+    # @section -- Gateway
+    grpcWeb: false
+    # -- Enables gRPC-Web and sets a root path prefix that the Argo CD API is served under (e.g. /argocd). Takes precedence over grpcWeb if both are set.
+    # @section -- Gateway
+    grpcWebRootPath: ""
+    # -- The base64-encoded public key of the self-signed x509 certificate or root CA certificate used by the target Argo CD Server. Must be in the PEM format.
+    # -- DEPRECATED: use gateway.serverCertificates instead - The base64-encoded public key of the self-signed x509 certificate or root CA certificate used by the target Argo CD Server. Must be in the PEM format.
+    # @section -- Gateway
+    serverCertificate: ""
+
+    # -- A list of per-project Argo CD authentication tokens. Each entry is `{ project: <name>, token: <token> }`. If supplied, a Kubernetes Secret is created and projected into the gateway container via `envFrom`. Mutually exclusive with `projectAuthenticationSecretName`, and with `authenticationToken`/`authenticationTokenSecretName`.
+    # @section -- Gateway
+    projectAuthentication: []
+# Example:
+#      - project: project-1
+#        token: token-1
+
+    # -- Name of an existing Secret whose keys (`PROJECT_AUTH_TOKEN_<project>`) hold per-project Argo CD tokens. Mutually exclusive with `projectAuthentication` being set, and with `authenticationToken`/`authenticationTokenSecretName`.
+    # @section -- Gateway
+    projectAuthenticationSecretName: ""
+  # -- Values for configuring how incoming Argo CD Application events are handled 
+    # @section -- Gateway
+  applicationEvents:
+    # -- Number of seconds to buffer incoming ArgoCD application events before dispatching to Octopus Server. Received events for the same ArgoCD Application in a buffer window will result in only the latest event being dispatched. Deleted and Added events are never buffered. (0 to disabled)
+    # @section -- Gateway
+    bufferSeconds: 2
+  # -- Values for configuring the service account used by the gateway pod
+  # @section -- Gateway
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    # @section -- Gateway
+    create: true
+    # -- Controls if the service account token should be automatically mounted into the gateway pod
+    # @section -- Gateway
+    automountServiceAccountToken: true
+    # -- Name of an existing service account to use for the gateway pod
+    # @section -- Gateway
+    name: ""
+    # -- Additional annotations for the service account
+    # @section -- Gateway
+    annotations: { }
+
+# This sets the registration configuration for the automatic registration of the gateway with Octopus Deploy.
+registration:
+  # -- Automatically register the gateway with the Octopus Deploy server, if set to false the gateway will not register itself
+  # @section -- Registration
+  register: true
+  # -- Values for configuring the service account used by the registration pod
+  # @section -- Registration
+  serviceAccount:
+    # -- Specifies whether a service account should be created, if registration.register is set to false this will not be used
+    # @section -- Registration
+    create: true
+    # -- Controls if the service account token should be automatically mounted into the registration pod
+    # @section -- Registration
+    automountServiceAccountToken: true
+    # -- Name of an existing service account to use for the registration pod
+    # @section -- Registration
+    name: ""
+    # -- Additional annotations for the service account
+    # @section -- Registration
+    annotations: { }
+
+  octopus:
+    # -- Name of the gateway
+    # @section -- Registration
+    name: ""
+    # -- The API URL of Octopus Deploy for registration e.g. `https://my-instance.octopus.app`
+    # @section -- Registration
+    serverApiUrl: ""
+    # -- The access token to authenticate to Octopus Deploy. If supplied, a Kubernetes secret is created to hold this token. Mutually exclusive with authenticationTokenSecretName/authenticationTokenSecretKey.
+    # @section -- Registration
+    serverAccessToken: ""
+    # -- Required when serverAccessToken is not set: name of an existing secret that contains the Octopus Deploy access token. When serverAccessToken is set, this overrides the default secret name.
+    # @section -- Registration
+    serverAccessTokenSecretName: ""
+    # -- Required when serverAccessToken is not set: the key within the secret that holds the token. When serverAccessToken is set, this overrides the default key ("token").
+    # @section -- Registration
+    serverAccessTokenSecretKey: ""
+    # -- Environment slugs or ids that the gateway should be associated with
+    # @section -- Registration
+    environments: [ ]
+    # -- Tenant slugs or ids that the gateway should be associated with
+    # @ignored
+    tenants: [ ]
+    # -- The space id that the gateway is registering with. Merged with spaceIds when both are set.
+    # @section -- Registration
+    spaceId: ""
+    # -- IDs of spaces to register the gateway with, merged with spaceId. The configured environments and tenants must exist in every space. At least one of spaceId or spaceIds is required.
+    # @section -- Registration
+    spaceIds: [ ]
+    # -- DEPRECATED: use gateway.serverCertificates instead - The base64-encoded public key of the self-signed x509 certificate or root CA certificate used by the Octopus Server for its HTTP API. Must be in the PEM format.
+    # @section -- Registration
+    serverCertificate: ""
+
+  argocd:
+    # -- The URL of the Argo CD instance's Web UI
+    # @section -- Registration
+    webUiUrl: ""
+
+# This sets the configuration for the automatic update CronJob
+autoUpdate:
+  # -- Indicates if the automatic update process CronJob is enabled. If set to false, the CronJob is not created
+  # @section -- Automatic update
+  enabled: true
+  # -- A Cron expression for how often the CronJob executes.
+  # @section -- Automatic update
+  schedule: "0 0 * * *"
+  # -- The number of successful finished jobs to keep. Set to 0 to not keep any successful jobs.
+  # @section -- Automatic update
+  successfulJobsHistoryLimit: 1
+  # -- The number of failed finished jobs to keep. Set to 0 to not keep any failed jobs.
+  # @section -- Automatic update
+  failedJobsHistoryLimit: 1
+
+  # -- The Helm CLI image used to perform the update. Override this (together with
+  # chartRepository below) for air-gapped installs that mirror images/charts internally
+  # instead of pulling from Docker Hub.
+  # @section -- Automatic update
+  helmImage: "docker.io/alpine/helm:3"
+
+  # -- The OCI registry URL the CronJob upgrades the release from. Override this for
+  # air-gapped installs that mirror the chart internally instead of pulling from Docker Hub.
+  # @section -- Automatic update
+  chartRepository: "oci://registry-1.docker.io/octopusdeploy/octopus-argocd-gateway-chart"
+
+  # -- Values for configuring the service account used by the automatic update Job
+  # @section -- Automatic update
+  serviceAccount:
+    # -- Specifies whether a service account should be created, if autoUpdate.enabled is set to false this will not be used
+    # @section -- Automatic update
+    create: true
+    # -- Controls if the service account token should be automatically mounted into the automatic update Job pod
+    # @section -- Automatic update
+    automountServiceAccountToken: true
+    # -- Name of an existing service account to use for the automatic update Job pod
+    # @section -- Automatic update
+    name: ""
+    # -- Additional annotations for the service account
+    # @section -- Automatic update
+    annotations: { }
+
+  job:
+    # -- Sets the number of times the job re-runs on failure
+    # @section -- Automatic update
+    backoffLimit: 3
+
+# -- Number of gateway replicas to run. The gateway uses Kubernetes leader
+# election so that only one replica processes events at a time; the others
+# stand by as warm passives and take over if the leader fails. Increase this
+# for active-passive high availability.
+replicaCount: 1
+
+# -- This is to override the chart name.
+nameOverride: ""
+
+# -- Annotations to be added to kubernetes gateway pods
+podAnnotations: { }
+# -- Labels to be added to kubernetes gateway pods
+podLabels: { }
+# -- Security context for kubernetes gateway pods
+# @section -- Security context
+podSecurityContext:
+  seccompProfile:
+    # -- Seccomp profile applied to the gateway pods
+    # @section -- Security context
+    type: RuntimeDefault
+# -- Security context for kubernetes gateway containers
+# @section -- Security context
+securityContext:
+  # -- Mount the container root filesystem as read-only. When true, an emptyDir volume is mounted at /tmp so the gateway still has scratch space
+  # @section -- Security context
+  readOnlyRootFilesystem: true
+  # -- Allow a process to gain more privileges than its parent process
+  # @section -- Security context
+  allowPrivilegeEscalation: false
+  capabilities:
+    # -- Linux capabilities to drop from the gateway container
+    # @section -- Security context
+    drop:
+      - ALL
+# -- Custom node selector for kubernetes gateway pods
+nodeSelector: { }
+# -- Custom tolerations for kubernetes gateway pods
+tolerations: [ ]
+# -- Custom affinity for kubernetes gateway pods
+affinity: { }
+metrics:
+  # -- Enable the Prometheus metrics server
+  # @section -- Metrics
+  enabled: false
+  # -- Port to expose Prometheus metrics on
+  # @section -- Metrics
+  port: 9090
+  service:
+    # -- Additional labels for the metrics Service
+    # @section -- Metrics
+    labels: {}
+    # -- Additional annotations for the metrics Service
+    # @section -- Metrics
+    annotations: {}
+  # -- ServiceMonitor configuration for Prometheus Operator
+  # @section -- Metrics
+  serviceMonitor:
+    # -- Create a ServiceMonitor resource (requires metrics.enabled and Prometheus Operator)
+    # @section -- Metrics
+    enabled: false
+    # -- Metrics scrape path
+    # @section -- Metrics
+    path: /metrics
+    # -- Scrape interval (e.g. "30s"). Defaults to the Prometheus global interval if unset
+    # @section -- Metrics
+    interval: ""
+    # -- Scrape timeout. Defaults to the Prometheus global scrapeTimeout if unset
+    # @section -- Metrics
+    scrapeTimeout: ""
+    # -- Scheme to use for scraping (http or https)
+    # @section -- Metrics
+    scheme: ""
+    # -- TLS configuration for scraping
+    # @section -- Metrics
+    tlsConfig: {}
+    # -- Additional labels to add to the ServiceMonitor (useful for Prometheus selector rules)
+    # @section -- Metrics
+    labels: {}
+    # -- Additional annotations to add to the ServiceMonitor
+    # @section -- Metrics
+    annotations: {}
+    # -- Relabeling rules applied before ingestion
+    # @section -- Metrics
+    relabelings: []
+    # -- Metric relabeling rules applied after scraping
+    # @section -- Metrics
+    metricRelabelings: []
+    # -- Namespace selector for the ServiceMonitor
+    # @section -- Metrics
+    namespaceSelector: {}
+
+# -- Extra environment variables to inject into the gateway container and the
+# registration Job container (e.g. HTTP_PROXY/HTTPS_PROXY/NO_PROXY for air-gapped installs).
+# Each entry is a standard Kubernetes EnvVar (supports `value`, `valueFrom`, etc.).
+extraEnv: []
+# - name: MY_VAR
+#   value: "my-value"
+
+# -- Custom resources for kubernetes gateway pods
+resources: { }
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+#   memory: 128Mi

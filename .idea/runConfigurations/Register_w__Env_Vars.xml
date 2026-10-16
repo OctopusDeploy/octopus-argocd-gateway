@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Register w/ Env Vars" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="octopus-argocd-gateway" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="register" />
+    <envs>
+      <env name="OCTOPUS_DEBUG" value="true" />
+      <env name="OCTOPUS_ENVIRONMENT" value="Environments-1" />
+      <env name="OCTOPUS_GATEWAY_NAME" value="MyGateway" />
+      <env name="OCTOPUS_SERVER_ACCESS_TOKEN" value="API-APIKEY01" />
+      <env name="OCTOPUS_SERVER_API_URL" value="http://localhost:8066" />
+      <env name="OCTOPUS_SPACE_ID" value="Spaces-1" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="github.com/OctopusDeploy/octopus-argocd-gateway" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

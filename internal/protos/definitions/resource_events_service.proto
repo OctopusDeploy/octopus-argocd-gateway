@@ -1,0 +1,40 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "google/protobuf/timestamp.proto";
+import "request_error.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service ResourceEventsService {
+  rpc GetResourceEvents(stream GetResourceEventsResponse) returns (stream GetResourceEventsRequest);
+}
+
+message GetResourceEventsRequest {
+  string request_id = 1;
+  string application_name = 3;
+  string application_project = 4;
+  string application_namespace = 5;
+  string resource_name = 6;
+  string resource_namespace = 7;
+  string resource_uid = 8;
+}
+
+message GetResourceEventsResponse {
+  string request_id = 1;
+  repeated EventItem items = 2;
+  optional RequestError request_error = 3;
+}
+
+message EventItem {
+  google.protobuf.Timestamp first_observed_time = 1;
+  google.protobuf.Timestamp last_observed_time = 2;
+  int32 count = 3;
+  string action = 4;
+  string reason = 5;
+  string note = 6;
+  string reporting_controller = 7;
+  string reporting_instance = 8;
+  string type = 9;
+}

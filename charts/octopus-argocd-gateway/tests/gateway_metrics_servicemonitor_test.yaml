@@ -1,0 +1,111 @@
+suite: test gateway metrics servicemonitor
+templates:
+  - gateway-metrics-servicemonitor.yaml
+set:
+  gateway.argocd.authenticationToken: "my-token"
+tests:
+  - it: should not render when metrics disabled
+    set:
+      metrics.enabled: false
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when serviceMonitor disabled
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render a ServiceMonitor when both metrics and serviceMonitor enabled
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceMonitor
+      - equal:
+          path: metadata.name
+          value: octopus-argocd-gateway-metrics
+
+  - it: should select the metrics service by gateway selector labels
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: octopus-argocd-gateway
+
+  - it: should use the default metrics path
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+    asserts:
+      - equal:
+          path: spec.endpoints[0].path
+          value: /metrics
+      - equal:
+          path: spec.endpoints[0].port
+          value: metrics
+
+  - it: should set scrape interval when configured
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+      metrics.serviceMonitor.interval: 30s
+    asserts:
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 30s
+
+  - it: should set scrape timeout when configured
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+      metrics.serviceMonitor.scrapeTimeout: 10s
+    asserts:
+      - equal:
+          path: spec.endpoints[0].scrapeTimeout
+          value: 10s
+
+  - it: should include additional servicemonitor labels
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+      metrics.serviceMonitor.labels:
+        release: prometheus
+    asserts:
+      - equal:
+          path: metadata.labels["release"]
+          value: prometheus
+
+  - it: should include relabelings when configured
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+      metrics.serviceMonitor.relabelings:
+        - sourceLabels: [__address__]
+          targetLabel: instance
+    asserts:
+      - equal:
+          path: spec.endpoints[0].relabelings[0].targetLabel
+          value: instance
+
+  - it: should include metricRelabelings when configured
+    set:
+      metrics.enabled: true
+      metrics.serviceMonitor.enabled: true
+      metrics.serviceMonitor.metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: go_.*
+          action: drop
+    asserts:
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].action
+          value: drop

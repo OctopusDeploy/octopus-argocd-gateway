@@ -1,0 +1,127 @@
+suite: test auto update cronjob
+templates:
+  - auto-update-job.yaml
+tests:
+  - it: should create a cronjob
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: metadata.name
+          value: octopus-argocd-gateway-updater
+
+  - it: should not template nodeSelector, affinity or tolerations by default
+    asserts:
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.nodeSelector
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.affinity
+      - notExists:
+          path: spec.jobTemplate.spec.template.spec.tolerations
+
+  - it: should default to the Docker Hub helm image and chart repository
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: docker.io/alpine/helm:3
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: oci://registry-1\.docker\.io/octopusdeploy/octopus-argocd-gateway-chart$
+
+  - it: should allow overriding the helm image and chart repository for air-gapped installs
+    set:
+      autoUpdate:
+        helmImage: my-registry.internal/mirror/alpine-helm:3
+        chartRepository: oci://my-registry.internal/mirror/octopus-argocd-gateway-chart
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: my-registry.internal/mirror/alpine-helm:3
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: oci://my-registry\.internal/mirror/octopus-argocd-gateway-chart$
+
+  - it: should template nodeSelector at the pod spec level
+    set:
+      nodeSelector:
+        disktype: ssd
+        kubernetes.io/os: linux
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.nodeSelector
+          value:
+            disktype: ssd
+            kubernetes.io/os: linux
+
+  - it: should template affinity at the pod spec level
+    set:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.affinity
+          value:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                          - linux
+
+  - it: should template tolerations at the pod spec level
+    set:
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: gateway
+          effect: NoSchedule
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.tolerations
+          value:
+            - key: dedicated
+              operator: Equal
+              value: gateway
+              effect: NoSchedule
+
+  - it: should not contain extraEnv entries by default
+    asserts:
+      - notContains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            value: "http://proxy.internal:3128"
+
+  - it: should inject extraEnv entries into the helm-update container
+    set:
+      extraEnv:
+        - name: HTTPS_PROXY
+          value: "http://proxy.internal:3128"
+        - name: MY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: token
+    asserts:
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            value: "http://proxy.internal:3128"
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].env
+          content:
+            name: MY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: token

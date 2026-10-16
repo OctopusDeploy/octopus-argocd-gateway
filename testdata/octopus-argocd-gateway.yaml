@@ -1,0 +1,3 @@
+argocd-server-url: localhost:30857
+octopus-grpc-client-id: OLD_CLIENT_ID
+octopus-health-check-give-up-after: "5m"

@@ -1,0 +1,21 @@
+suite: test registration role
+templates:
+  - registration-role.yaml
+tests:
+  - it: creates role when registration.register and registration.serviceAccount.create are true
+    set:
+      registration.register: true
+      registration.serviceAccount.create: true
+    asserts:
+      - isKind:
+          of: Role
+      - hasDocuments:
+          count: 1
+
+  - it: does not create role when either registration.register or registration.serviceAccount.create are false
+    set:
+      registration.register: false
+      registration.serviceAccount.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

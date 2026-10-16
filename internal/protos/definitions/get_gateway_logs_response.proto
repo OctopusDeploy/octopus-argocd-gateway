@@ -1,0 +1,14 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "pod_log_entry.proto";
+import "request_error.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+message GetGatewayLogsResponse {
+  string request_id = 1;
+  repeated PodLogEntry entries = 2;
+  optional RequestError request_error = 3;
+}

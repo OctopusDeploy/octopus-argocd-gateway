@@ -1,0 +1,160 @@
+name: Publish Helm chart
+run-name: Publish Helm chart
+
+# Run on PRs and releases
+# We only push to production on a release
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - ".release-please-manifest.json"
+      - "release-please-config.json"
+      - ".github/**"
+      - "**.md"
+
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Helm
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: v3.13.2
+
+      - name: Run Helm unit tests
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.0.3
+          helm unittest charts/octopus-argocd-gateway
+
+  check-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+      - name: Generate docs
+        working-directory: charts/octopus-argocd-gateway
+        run: "npm run generate-docs"
+      - name: Check readme is unchanged
+        run: |
+          echo "Ensuring readme is up-to-date"
+          echo "If this test fails, run 'npm run generate-docs' locally and commit the changes"
+          git diff --ignore-cr-at-eol -w --exit-code
+
+  version_and_package:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      CHART_VERSION: ${{ steps.version.outputs.CHART_VERSION  }}
+      PACKAGE_NAME: ${{ steps.version.outputs.PACKAGE_NAME }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Helm
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: "v3.13.2"
+
+      # Helm automatically sets the image version as a label, with a limit of 63 which is exceeded by pre-release builds
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+      - name: Parse Chart config
+        uses: pietrobolcato/action-read-yaml@9f13718d61111b69f30ab4ac683e67a56d254e1d # 1.1.0
+        id: read_chart_yaml
+        with:
+          config: ${{ github.workspace }}/charts/octopus-argocd-gateway/Chart.yaml
+
+      - name: Generate application version
+        if: github.event_name == 'pull_request'
+        id: app_version
+        # Branch names are attacker-controlled; pass via env rather than interpolating into the script
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          BRANCH_NAME=$(echo "$HEAD_REF" | tr '/' '-' | tr '_' '-')
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          VERSION="${CURRENT_VERSION}-${BRANCH_NAME}-${{ env.SHORT_SHA }}"
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate chart version
+        id: version
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          chart_version="${{ steps.read_chart_yaml.outputs.version }}"
+
+          pre_release=""
+          if [[ "${{github.event_name}}" != "release" ]]
+          then
+              cleansed_branch=$(echo "$HEAD_REF" | tr '/' '-' | tr '_' '-')
+              pre_release="-${cleansed_branch}-$(date +'%Y%m%d%H%M%S')"
+          fi
+
+          full_version="$chart_version$pre_release"
+
+          echo "CHART_VERSION=$full_version" >> $GITHUB_OUTPUT
+          echo "PACKAGE_NAME=octopus-argocd-gateway-chart-$full_version.tgz" >> $GITHUB_OUTPUT
+
+      - name: Package Chart with Updated Application (Pre-release)
+        if: github.event_name == 'pull_request'
+        run: helm package './charts/octopus-argocd-gateway' --version '${{ steps.version.outputs.CHART_VERSION }}' --app-version '${{ steps.app_version.outputs.APP_VERSION }}'
+
+      - name: Package Chart
+        if: (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/octopus-argocd-gateway'))
+        run: helm package './charts/octopus-argocd-gateway' --version '${{ steps.version.outputs.CHART_VERSION }}'
+
+      - uses: actions/upload-artifact@v7
+        name: Upload packaged chart
+        with:
+          name: "${{ steps.version.outputs.PACKAGE_NAME }}"
+          path: "${{ github.workspace }}/octopus-argocd-gateway-chart-${{ steps.version.outputs.CHART_VERSION }}.tgz"
+
+  publish_to_octopus:
+    runs-on: ubuntu-latest
+    # We publish to Artifactory if this is a pull request or is a release for the helm chart.
+    # Fork PRs don't get an OIDC token, so skip them rather than fail.
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/octopus-argocd-gateway')) }}
+    needs: version_and_package
+    permissions:
+      id-token: write
+    steps:
+      - name: Download packaged chart
+        uses: actions/download-artifact@v8
+        with:
+          name: "${{ needs.version_and_package.outputs.PACKAGE_NAME }}"
+
+      - name: Login to Octopus
+        uses: OctopusDeploy/login@e39e03d07630f363bdccd6c7ad4eb28e0ea8a184 # v2.0.0
+        with:
+          server: ${{ vars.OCTOPUS_SERVER }}
+          service_account_id: ${{ secrets.OCTOPUS_SERVICE_ACCOUNT }}
+
+      - name: Push helm chart to Octopus Deploy 🐙
+        uses: OctopusDeploy/push-package-action@c97226f7dc0e4fa3bd2fba9b5b30b2ac8a32048c # v4.0.2
+        with:
+          space: "${{ vars.DEPLOY_K8S_OWNERS_SPACE_NAME }}"
+          packages: ${{ needs.version_and_package.outputs.PACKAGE_NAME }}
+          overwrite_mode: IgnoreIfExists
+
+      - name: Create a release in Octopus Deploy 🐙
+        uses: OctopusDeploy/create-release-action@41621dd2b319b1dbf1f537913f2d18992eff6fd5 # v4.1.4
+        with:
+          space: "${{ vars.DEPLOY_K8S_OWNERS_SPACE_NAME }}"
+          project: "Octopus ArgoCd Gateway"
+          release_number: ${{ needs.version_and_package.outputs.CHART_VERSION }}
+          package_version: ${{ needs.version_and_package.outputs.CHART_VERSION }}
+          ignore_existing: true

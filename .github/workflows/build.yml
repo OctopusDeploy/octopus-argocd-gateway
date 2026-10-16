@@ -1,0 +1,87 @@
+name: Build and Push Image
+run-name: "Build and Push Image"
+
+# Run on PRs and releases
+# We only push to production on a release
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  release:
+    types: [published]
+
+env:
+  prerelease_registry: "docker.packages.octopushq.com"
+  image_name: "octopusdeploy/octopus-argocd-gateway"
+
+jobs:
+  build:
+    # Fork PRs don't get registry secrets or an OIDC token, so skip them rather than fail
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'release' && !startsWith(github.ref, 'refs/tags/octopus-argocd-gateway')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Set up docker build tooling
+      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - uses: depot/setup-action@15c09a5f77a0840ad4bce955686522a257853461 # v1.7.1
+
+      # Helm automatically sets the image version as a label, with a limit of 63 which is exceeded by pre-release builds
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+      - name: Determine PR version
+        if: github.event_name == 'pull_request'
+        id: new_version
+        # Branch names are attacker-controlled; pass via env rather than interpolating into the script
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          git fetch --tags
+          BRANCH_NAME=$(echo "$HEAD_REF" | tr '/' '-' | tr '_' '-')
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          VERSION="v${CURRENT_VERSION}-${BRANCH_NAME}-${{ env.SHORT_SHA }}"
+          echo "version=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Generate application version
+        if: github.event_name == 'release'
+        id: release_version
+        run: |
+          echo "version=${{ github.event.release.tag_name }}" >> "$GITHUB_ENV"
+
+      - name: Login to Artifactory
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: "docker.packages.octopushq.com"
+          username: ${{ secrets.ARTIFACTORY_USERNAME }}
+          password: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+      - name: Build and push to artifactory
+        uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1.18.0
+        with:
+          project: xv5nl2jn96
+          push: true
+          tags: "${{ env.prerelease_registry }}/${{ env.image_name }}:${{ env.version }}"
+          platforms: linux/amd64,linux/arm64
+
+      # Only push to production if it's a release
+      - name: Login to Docker Hub
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        if: github.event_name == 'release'
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Push image to Docker Hub
+        if: github.event_name == 'release'
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ env.image_name }}:${{ env.version }} \
+            --tag ${{ env.image_name }}:latest \
+            ${{ env.prerelease_registry }}/${{ env.image_name }}:${{ env.version }}

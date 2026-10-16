@@ -1,0 +1,22 @@
+{{- if and .Values.registration.register .Values.registration.serviceAccount.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "octopus-argocd-gateway.registration.roleName" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+  annotations:
+    {{- include "octopus-argocd-gateway.registration.hookAnnotationsWithSuccessDelete" . | nindent 4 }}
+    "helm.sh/hook-weight": "-5"
+rules:
+  - verbs:
+      - get
+      - list
+      - create
+      - update
+    apiGroups:
+      - ''
+    resources:
+      - 'secrets'
+{{- end }}

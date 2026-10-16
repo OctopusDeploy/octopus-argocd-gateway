@@ -1,0 +1,131 @@
+{{- include "octopus-argocd-gateway.metrics.validate" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "octopus-argocd-gateway.name" . }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "octopus-argocd-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{/* Forces the pods to be recreated just incase the config map/secret template has changed */}}
+        revision: {{ .Release.Revision | quote }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "octopus-argocd-gateway.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "octopus-argocd-gateway.gateway.serviceAccountName" . | quote }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: octopus-argocd-gateway
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "octopus-argocd-gateway.fullImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.metrics.enabled }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+          {{- end }}
+          command:
+            - /gateway
+          args:
+            - run
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ include "octopus-argocd-gateway.config.volumeMountName" .}}
+              mountPath: {{ include "octopus-argocd-gateway.config.volumeMountPath" .}}
+            {{- if .Values.securityContext.readOnlyRootFilesystem }}
+            - name: tmp
+              mountPath: /tmp
+            {{- end }}
+          env:
+            {{- if or .Values.gateway.argocd.authenticationToken .Values.gateway.argocd.authenticationTokenSecretName }}
+            - name: "OCTOPUS_ARGOCD_AUTH_TOKEN"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "octopus-argocd-gateway.argocd.authToken.secretName" . }}
+                  key: {{ include "octopus-argocd-gateway.argocd.authToken.secretKey" . }}
+            {{- end }}
+            - name: "GATEWAY_VERSION"
+              value: {{ .Chart.AppVersion }}
+            - name: "HELM_CHART_VERSION"
+              value: {{ .Chart.Version }}
+            - name: "HELM_RELEASE_NAME"
+              value: {{ .Release.Name }}
+            - name: "KUBERNETES_NAMESPACE"
+              value: {{ .Release.Namespace }}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OCTOPUS_METRICS_PORT
+              value: "{{ if .Values.metrics.enabled }}{{ .Values.metrics.port }}{{ else }}0{{ end }}"
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if include "octopus-argocd-gateway.argocd.projectAuthTokens.enabled" . }}
+          envFrom:
+            - secretRef:
+                name: {{ include "octopus-argocd-gateway.argocd.projectAuthTokens.secretName" . }}
+                optional: true
+              prefix: "OCTOPUS_ARGOCD_"
+          {{- end }}
+      volumes:
+        {{- if .Values.securityContext.readOnlyRootFilesystem }}
+        - name: tmp
+          emptyDir: {}
+        {{- end }}
+        - name: {{ include "octopus-argocd-gateway.config.volumeMountName" .}}
+          projected:
+            sources:
+              - configMap:
+                  name: {{ include "octopus-argocd-gateway.configMapName" .}}
+              - secret:
+                  name: {{ include "octopus-argocd-gateway.octopus.authentication.secretName" .}}
+              {{- if .Values.gateway.serverCertificateSecretName }}
+              - secret:
+                  name: {{ .Values.gateway.serverCertificateSecretName}}
+              {{- else}}
+              - secret:
+                  name: {{ include "octopus-argocd-gateway.certificates.secretName" .}}
+              {{- end}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

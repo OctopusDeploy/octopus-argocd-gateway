@@ -1,0 +1,3 @@
+This is the official Helm chart for the Octopus Deploy Argo CD Gateway.
+
+You can read more on how to use this at https://octopus.com/docs

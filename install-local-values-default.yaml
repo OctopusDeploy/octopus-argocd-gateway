@@ -1,0 +1,22 @@
+# Default values for local installation
+# To override these values, create a file named install-local-values-override.yaml
+# with your custom configuration
+
+registration:
+  octopus:
+    name: "local-dev"
+    serverApiUrl: "http://host.docker.internal:8065/"
+    serverAccessToken: "API-APIKEY01"
+    environments:
+      - development
+    spaceId: "Spaces-1"
+
+gateway:
+  debug: "true"
+  octopus:
+    serverGrpcUrl: "grpc://host.docker.internal:8443"
+  argocd:
+    authenticationToken: "TOKEN_HERE"
+    serverGrpcUrl: "grpc://argocd-server.argocd.svc.cluster.local"
+    insecure: "true"
+    plaintext: "false"

@@ -1,0 +1,39 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "request_error.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service ApplicationManifestsService {
+  rpc GetResourceManifests(stream GetResourceManifestsResponse) returns (stream GetResourceManifestsRequest);
+}
+
+message GetResourceManifestsRequest {
+  string request_id = 1;
+  ResourceType resource_type = 2;
+  string application_name = 3;
+  string application_project = 4;
+  string application_namespace = 5;
+  string resource_name = 6;
+  string resource_namespace = 7;
+  string resource_group = 8;
+  string resource_version = 9;
+  string resource_kind = 10;
+}
+
+message GetResourceManifestsResponse {
+  string request_id = 1;
+  string target_manifest = 2;
+  string live_manifest = 3;
+  string normalized_live_manifest = 4;
+  string predicted_live_manifest = 5;
+  optional RequestError request_error = 6;
+}
+
+enum ResourceType {
+  RESOURCE_TYPE_UNSPECIFIED = 0;
+  RESOURCE_TYPE_APPLIED = 1;
+  RESOURCE_TYPE_CHILD = 2;
+}

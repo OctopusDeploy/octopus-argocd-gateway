@@ -1,0 +1,23 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "request_error.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service ApplicationSyncService {
+  rpc SyncApplication(stream SyncApplicationResponse) returns (stream SyncApplicationRequest);
+}
+
+message SyncApplicationRequest {
+  string request_id = 1;
+  string application_name = 2;
+  string application_project = 3;
+  string application_namespace = 4;
+}
+
+message SyncApplicationResponse {
+  string request_id = 1;
+  optional RequestError request_error = 2;
+}

@@ -1,0 +1,15 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+message RequestError {
+  string message = 1;
+  ErrorCode code = 2;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_UNEXPECTED = 1;
+}

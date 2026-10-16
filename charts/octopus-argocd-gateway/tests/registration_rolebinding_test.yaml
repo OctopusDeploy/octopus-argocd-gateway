@@ -1,0 +1,21 @@
+suite: test registration role binding
+templates:
+  - registration-rolebinding.yaml
+tests:
+  - it: creates role binding when registration.register and registration.serviceAccount.create are true
+    set:
+      registration.register: true
+      registration.serviceAccount.create: true
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - hasDocuments:
+          count: 1
+
+  - it: does not create role binding when either registration.register or registration.serviceAccount.create are false
+    set:
+      registration.register: false
+      registration.serviceAccount.create: false
+    asserts:
+      - hasDocuments:
+          count: 0

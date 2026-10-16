@@ -1,0 +1,23 @@
+{
+  "name": "octopus-argocd-gateway",
+  "version": "1.0.0",
+  "description": "Octopus Argo CD Gateway",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OctopusDeploy/octopus-argocd-gateway.git"
+  },
+  "author": "Octopus Deploy",
+  "bugs": {
+    "url": "https://github.com/OctopusDeploy/octopus-argocd-gateway/issues"
+  },
+  "homepage": "https://github.com/OctopusDeploy/octopus-argocd-gateway#readme",
+  "scripts": {
+    "test": "cross-env-shell docker run -ti --rm -v $INIT_CWD:/apps helmunittest/helm-unittest:latest .",
+    "update-test-snapshots": "cross-env-shell docker run -ti --rm -v $INIT_CWD:/apps helmunittest/helm-unittest:latest . -u",
+    "generate-docs": "docker run --rm --volume \".:/helm-docs\" jnorwood/helm-docs:v1.14.2 --sort-values-order file"
+  },
+  "dependencies": {
+    "cross-env": "^10.0.0"
+  }
+}

@@ -1,0 +1,50 @@
+suite: test gateway extraEnv
+templates:
+  - gateway-deployment.yaml
+set:
+  gateway.argocd.authenticationToken: "my-token"
+tests:
+  - it: should not add any extra env vars by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: SOME_CUSTOM_VAR
+            value: "hello"
+
+  - it: should inject a plain value extraEnv entry into the gateway container
+    set:
+      extraEnv:
+        - name: OCTOPUS_PPROF_PORT
+          value: "6060"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OCTOPUS_PPROF_PORT
+            value: "6060"
+
+  - it: should inject multiple extraEnv entries including a valueFrom entry
+    set:
+      extraEnv:
+        - name: GOMAXPROCS
+          value: "4"
+        - name: MY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: token
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GOMAXPROCS
+            value: "4"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: token

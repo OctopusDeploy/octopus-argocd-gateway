@@ -1,0 +1,10 @@
+suite: Snapshot - Default Values
+tests:
+  - it: should match snapshot for default values
+    values:
+      - './values/default_values.yaml'
+    chart:
+      version: 1.2.3
+      appVersion: 4.5.6
+    asserts:
+      - matchSnapshot: { }

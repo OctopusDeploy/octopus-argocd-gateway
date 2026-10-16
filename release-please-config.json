@@ -1,0 +1,30 @@
+{
+  "separate-pull-requests": true,
+  "packages": {
+    ".": {
+      "pull-request-title-pattern": "feat${scope}: release${component} ${version}",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "release-type": "go",
+      "versioning": "default",
+      "exclude-paths": [
+        "charts/octopus-argocd-gateway"
+      ],
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/octopus-argocd-gateway/Chart.yaml",
+          "jsonpath": "$.appVersion"
+        }
+      ]
+    },
+    "charts/octopus-argocd-gateway": {
+      "component": "octopus-argocd-gateway-chart",
+      "pull-request-title-pattern": "chore${scope}: release${component} ${version}",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true,
+      "release-type": "helm",
+      "versioning": "default"
+    }
+  }
+}

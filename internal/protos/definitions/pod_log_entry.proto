@@ -1,0 +1,12 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+message PodLogEntry {
+  string message = 1;
+  google.protobuf.Timestamp timestamp = 2;
+}

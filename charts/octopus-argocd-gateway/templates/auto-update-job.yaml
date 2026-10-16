@@ -1,0 +1,67 @@
+{{ if .Values.autoUpdate.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "octopus-argocd-gateway.autoUpdate.jobName" . }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.autoUpdate.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.autoUpdate.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.autoUpdate.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:  
+          {{- with .Values.image.imagePullSecrets }}
+          imagePullSecrets:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          serviceAccountName: {{ include "octopus-argocd-gateway.autoUpdate.serviceAccountName" . }}
+          {{- with .Values.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: helm-update
+              {{- with .Values.securityContext }}
+              securityContext:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              image: {{ .Values.autoUpdate.helmImage | quote }}
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: HELM_CACHE_HOME
+                  value: /tmp/helm/cache
+                - name: HELM_CONFIG_HOME
+                  value: /tmp/helm/config
+                - name: HELM_DATA_HOME
+                  value: /tmp/helm/data
+                {{- with .Values.extraEnv }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              volumeMounts:
+                - name: helm-tmp
+                  mountPath: /tmp/helm
+              command:
+                - /bin/sh
+                - -c
+                - helm upgrade --atomic --namespace "{{.Release.Namespace}}" --version "*.*" --reset-then-reuse-values "{{ .Release.Name }}" {{ .Values.autoUpdate.chartRepository }}
+          restartPolicy: Never
+          volumes:
+            - name: helm-tmp
+              emptyDir: {}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      backoffLimit: {{ .Values.autoUpdate.job.backoffLimit }}
+{{- end }}

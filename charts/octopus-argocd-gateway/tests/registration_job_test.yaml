@@ -1,0 +1,371 @@
+suite: test registration job
+templates:
+  - registration-job.yaml
+tests:
+  - it: creates a registration job when registration.register is true
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - isKind:
+          of: Job
+      - hasDocuments:
+          count: 1
+
+  - it: does not create a registration job when registration.register is false
+    set:
+      registration.register: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: runs as a pre-install/pre-upgrade hook
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/hook"]
+          value: "pre-upgrade,pre-install"
+      - equal:
+          path: metadata.annotations["helm.sh/hook-delete-policy"]
+          value: "before-hook-creation,hook-succeeded"
+
+  - it: hard-codes backoffLimit to 3 and never restarts the pod in place
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - equal:
+          path: spec.backoffLimit
+          value: 3
+      - equal:
+          path: spec.ttlSecondsAfterFinished
+          value: 300
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+
+  - it: sets pod env vars correctly
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+        - "Environments-2"
+      registration.octopus.tenants:
+        - "Tenants-1"
+        - "Tenants-2"
+      registration.octopus.spaceId: "Spaces-1"
+      registration.argocd.webUiUrl: "http://localhost"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_GATEWAY_NAME"
+            value: "MyGatewayName"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_ARGOCD_WEB_UI_URL"
+            value: "http://localhost"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SERVER_API_URL"
+            value: "http://localhost:8080"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_ID"
+            value: "Spaces-1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_ENVIRONMENT"
+            value: "Environments-1,Environments-2"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_TENANT"
+            value: "Tenants-1,Tenants-2"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_NAMESPACE"
+            value: "NAMESPACE"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SECRET_NAME"
+            value: "octopus-argocd-gateway-octopus-auth-secret"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_CONFIG_NAME"
+            value: "octopus-argocd-gateway-config"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_IDS"
+          any: true
+
+  - it: sets the space ids env var when spaceIds is supplied alongside spaceId
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+      registration.octopus.spaceIds:
+        - "Spaces-2"
+        - "Spaces-3"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_ID"
+            value: "Spaces-1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_IDS"
+            value: "Spaces-2,Spaces-3"
+
+  - it: allows spaceIds without spaceId
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceIds:
+        - "Spaces-1"
+        - "Spaces-2"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_IDS"
+            value: "Spaces-1,Spaces-2"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SPACE_ID"
+          any: true
+
+  - it: fails when neither spaceId nor spaceIds is supplied
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+    asserts:
+      - failedTemplate:
+          errorMessage: "When automatically registering, you must supply registration.octopus.spaceId or registration.octopus.spaceIds"
+
+  - it: sets volumeMounts correctly
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].name
+          value: "configuration-volume"
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0].mountPath
+          value: "/octopus-argo-gateway"
+
+  - it: sets volumes correctly
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments:
+        - "Environments-1"
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: "configuration-volume"
+
+  - it: uses external secret for access token when configured
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGateway"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: ""
+      registration.octopus.serverAccessTokenSecretName: "my-external-secret"
+      registration.octopus.serverAccessTokenSecretKey: "MY_TOKEN_KEY"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SERVER_ACCESS_TOKEN"
+            valueFrom:
+              secretKeyRef:
+                name: "my-external-secret"
+                key: "MY_TOKEN_KEY"
+                optional: true
+
+  - it: uses default secret key when external secret name provided without key
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGateway"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: ""
+      registration.octopus.serverAccessTokenSecretName: "my-external-secret"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SERVER_ACCESS_TOKEN"
+            valueFrom:
+              secretKeyRef:
+                name: "my-external-secret"
+                key: "token"
+                optional: true
+
+  - it: uses envFrom when no external secret configured
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGateway"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: "OCTOPUS_SERVER_ACCESS_TOKEN"
+            valueFrom:
+              secretKeyRef:
+                name: "octopus-argocd-gateway-registration-secret"
+                key: "token"
+                optional: true
+
+  - it: fails when register is true but required values are not provided
+    set:
+      registration.register: true
+    asserts:
+      - failedTemplate:
+          errorMessage: You must supply either registration.octopus.serverAccessToken, or registration.octopus.serverAccessTokenSecretName
+
+  - it: should template resources values into the registration job correctly
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+  - it: should omit resources from the registration job when not set
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
+
+  - it: should not add any extra env vars by default
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            value: "http://proxy.internal:3128"
+
+  - it: should inject extraEnv entries into the registration job container
+    set:
+      registration.register: true
+      registration.octopus.name: "MyGatewayName"
+      registration.octopus.serverApiUrl: "http://localhost:8080"
+      registration.octopus.serverAccessToken: "ACCESS-TOKEN"
+      registration.octopus.environments: ["Environments-1"]
+      registration.octopus.spaceId: "Spaces-1"
+      extraEnv:
+        - name: HTTPS_PROXY
+          value: "http://proxy.internal:3128"
+        - name: MY_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: my-secret
+              key: token
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: HTTPS_PROXY
+            value: "http://proxy.internal:3128"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: my-secret
+                key: token

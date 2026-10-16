@@ -1,0 +1,12 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "prune_applications_request.proto";
+import "prune_applications_response.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service PruneApplicationsService {
+  rpc PruneStaleApplications(PruneApplicationsRequest) returns (PruneApplicationsResponse);
+}

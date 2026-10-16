@@ -1,0 +1,36 @@
+syntax = "proto3";
+package octopus.argo_cd_gateway.contracts.v1;
+
+import "request_error.proto";
+
+option csharp_namespace = "Octopus.ArgoCD.Gateway.MessageContracts";
+option go_package = "github.com/octopusdeploy/octopus-argocd-gateway/internal/protos";
+
+service ApplicationResourceTreeService {
+  rpc GetApplicationResourceTree(stream GetApplicationResourceTreeResponse) returns (stream GetApplicationResourceTreeRequest);
+}
+
+message GetApplicationResourceTreeRequest {
+  string request_id = 1;
+  string application_name = 2;
+  string application_project = 3;
+  string application_namespace = 4;
+}
+
+message GetApplicationResourceTreeResponse {
+  string request_id = 1;
+  repeated ResourceTreeNode nodes = 2;
+  optional RequestError request_error = 3;
+}
+
+message ResourceTreeNode {
+  string uid = 1;
+  string name = 2;
+  string namespace = 3;
+  string group = 4;
+  string version = 5;
+  string kind = 6;
+  string parent_uid = 7;
+  string health_status_code = 8;
+  string health_status_message = 9;
+}

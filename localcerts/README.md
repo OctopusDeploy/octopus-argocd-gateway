@@ -1,0 +1,1 @@
+Add your *.pem files here to allow the Gateway to add them to its certificate pool during runtime

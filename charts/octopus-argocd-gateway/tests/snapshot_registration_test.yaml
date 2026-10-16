@@ -1,0 +1,10 @@
+suite: Snapshot - Registration Values
+tests:
+  - it: should match snapshot for registration values
+    values:
+      - './values/registration_values.yaml'
+    chart:
+      version: 1.2.3
+      appVersion: 4.5.6
+    asserts:
+      - matchSnapshot: { }

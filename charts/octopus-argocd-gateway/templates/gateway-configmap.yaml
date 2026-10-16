@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "octopus-argocd-gateway.configMapName" . }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+data:
+  octopus-argocd-gateway.yaml: |-
+    argocd-server-url: {{ required "You must supply gateway.argocd.serverGrpcUrl" .Values.gateway.argocd.serverGrpcUrl | quote}}
+    argocd-server-plaintext: {{ .Values.gateway.argocd.plaintext | default false }}
+    argocd-server-insecure: {{ .Values.gateway.argocd.insecure | default false }}
+    argocd-server-grpcweb: {{ .Values.gateway.argocd.grpcWeb | default false }}
+    argocd-server-grpcweb-root-path: {{ .Values.gateway.argocd.grpcWebRootPath | default "" | quote }}
+    octopus-grpc-url: {{ required "You must supply gateway.octopus.serverGrpcUrl" .Values.gateway.octopus.serverGrpcUrl | quote}}
+    octopus-grpc-plaintext: {{ .Values.gateway.octopus.plaintext | default false }}
+    octopus-grpc-pin-certificate: {{ ne .Values.gateway.octopus.serverThumbprint "" | ternary true false }}
+    octopus-health-check-interval: {{ .Values.gateway.octopus.healthCheck.interval | quote }}
+    octopus-health-check-give-up-after: {{ .Values.gateway.octopus.healthCheck.giveUpAfter | quote }}
+    gateway-certificate-path: {{ include "octopus-argocd-gateway.config.volumeMountPath" .}}
+    application-event-buffer-seconds: {{ .Values.gateway.applicationEvents.bufferSeconds }}
+    debug: {{ .Values.gateway.debug | default false }}

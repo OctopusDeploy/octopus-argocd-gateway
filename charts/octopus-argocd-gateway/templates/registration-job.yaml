@@ -1,0 +1,129 @@
+{{ if .Values.registration.register }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "octopus-argocd-gateway.registration.jobName" . }}
+  labels:
+    {{- include "octopus-argocd-gateway.labels" . | nindent 4 }}
+    {{- with .Values.podLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- include "octopus-argocd-gateway.registration.hookAnnotationsWithSuccessDelete" . | nindent 4 }}
+    {{- with .Values.podAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  # Hard-coded retry count. This only exists to ride out transient networking
+  # issues during registration; if the job fails consistently, more retries
+  # will not help.
+  backoffLimit: 3
+  # On success Helm's hook-delete-policy removes the Job almost immediately.
+  # On a (non-atomic) failure Helm leaves it behind for debugging; this TTL
+  # caps that to 5 minutes - long enough to see the failure and read the
+  # job/pod logs, but no longer.
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        {{- include "octopus-argocd-gateway.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Never
+      serviceAccountName: {{ include "octopus-argocd-gateway.registration.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: registration
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "octopus-argocd-gateway.fullImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /gateway
+          args:
+            - register
+          {{- with .Values.resources }}
+          resources:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: "OCTOPUS_SERVER_ACCESS_TOKEN"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "octopus-argocd-gateway.registration.secretName"  . }}
+                  key: {{ include "octopus-argocd-gateway.registration.secretKey" . }}
+                  optional: true
+            - name: "OCTOPUS_GATEWAY_NAME"
+              value: {{ required "When automatically registering, you must supply registration.octopus.name" .Values.registration.octopus.name | quote }}
+            - name: "OCTOPUS_ARGOCD_WEB_UI_URL"
+              value: {{ .Values.registration.argocd.webUiUrl | quote }}
+            - name: "OCTOPUS_SERVER_API_URL"
+              value: {{ required "When automatically registering, you must supply registration.octopus.serverApiUrl" .Values.registration.octopus.serverApiUrl | quote }}
+            {{- if not (or .Values.registration.octopus.spaceId .Values.registration.octopus.spaceIds) }}
+            {{- fail "When automatically registering, you must supply registration.octopus.spaceId or registration.octopus.spaceIds" }}
+            {{- end }}
+            {{- with .Values.registration.octopus.spaceId }}
+            - name: "OCTOPUS_SPACE_ID"
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.registration.octopus.spaceIds }}
+            - name: "OCTOPUS_SPACE_IDS"
+              value: {{ join "," . | quote }}
+            {{- end }}
+            - name: "OCTOPUS_ENVIRONMENT"
+              value: {{ required "When automatically registering, you must supply registration.octopus.environments" .Values.registration.octopus.environments | join "," | quote }}
+            - name: "OCTOPUS_TENANT"
+              value: {{ join "," .Values.registration.octopus.tenants  | quote }}
+            - name: "OCTOPUS_NAMESPACE"
+              value: {{ .Release.Namespace }}
+            - name: "OCTOPUS_SECRET_NAME"
+              value: {{ include "octopus-argocd-gateway.octopus.authentication.secretName" . }}
+            - name: "OCTOPUS_CONFIG_NAME"
+              value: {{ include "octopus-argocd-gateway.configMapName"  . }}
+            - name: "OCTOPUS_GATEWAY_CERTIFICATE_PATH"
+              value: {{ include "octopus-argocd-gateway.config.volumeMountPath" . }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: {{ include "octopus-argocd-gateway.config.volumeMountName" .}}
+              mountPath: {{ include "octopus-argocd-gateway.config.volumeMountPath" .}}
+      volumes:
+        - name: {{ include "octopus-argocd-gateway.config.volumeMountName" .}}
+          projected:
+            sources:
+              {{- if .Values.gateway.serverCertificateSecretName }}
+              - secret:
+                  name: {{ .Values.gateway.serverCertificateSecretName}}
+              {{- else}}
+              - secret:
+                  name: {{ include "octopus-argocd-gateway.registration.certificates.secretName" .}}
+              {{- end}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end}}
