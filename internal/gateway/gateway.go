@@ -46,6 +46,7 @@ type Gateway struct {
 	metrics       metrics.Metrics
 }
 
+// This is a comment to test the CI
 func New(ctx context.Context, config *configuration.Configuration, logger *slog.Logger) (*Gateway, error) {
 	errCh := make(chan error)
 
