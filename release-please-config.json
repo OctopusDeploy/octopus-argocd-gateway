@@ -1,4 +1,5 @@
 {
+  "bootstrap-sha": "469eb3264a80b1e2228722c1d907cd43f23ca445",
   "separate-pull-requests": true,
   "packages": {
     ".": {
