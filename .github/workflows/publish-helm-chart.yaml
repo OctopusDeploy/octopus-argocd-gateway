@@ -28,7 +28,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
-          version: v3.13.2
+          version: v3.22.1
 
       - name: Run Helm unit tests
         run: |
@@ -62,7 +62,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
         with:
-          version: "v3.13.2"
+          version: "v3.22.1"
 
       # Helm automatically sets the image version as a label, with a limit of 63 which is exceeded by pre-release builds
       - name: Set short git commit SHA
