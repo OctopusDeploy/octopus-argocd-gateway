@@ -19,10 +19,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	}
-	
 	configManager := createConfigManager(rootCmd)
 
-	// register each sub-command
+	// register each sub-command.
 	registerCommander := &RegisterCommander{
 		ConfigManager: configManager,
 	}
