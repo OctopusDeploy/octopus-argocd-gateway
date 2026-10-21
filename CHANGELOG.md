@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/v2.2.0...v2.2.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* rebuild with non-impacted SSL certificates- [#27](https://github.com/OctopusDeploy/octopus-argocd-gateway/issues/27) ([c9cbc24](https://github.com/OctopusDeploy/octopus-argocd-gateway/commit/c9cbc240f9f3f7a31f7deb6e87212e979e1a9ebd))
+
 ## [2.2.0](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/v2.1.0...v2.2.0) (2026-10-08)
 
 
