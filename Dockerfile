@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o gateway .
 
 # Runtime image
-FROM gcr.io/distroless/static:debug@sha256:85554049bdfa232b64a328412dd8909cc3baad08474cf97b2e5cc0a74e23fc5e
+FROM gcr.io/distroless/static:debug@sha256:11c839f18a0d7b91b093cda53a5d4cee84f23ec450a6f6e1bf17ab12bf296333
 
 # Copy only the binary from the build stage to the final image
 COPY --from=build /build/gateway /
