@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.111.0
-	github.com/argoproj/argo-cd/v3 v3.0.0
+	github.com/argoproj/argo-cd/v3 v3.5.6
 	github.com/argoproj/gitops-engine v0.7.1-0.20250314164314-7258614f5041
 	github.com/dave/jennifer v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
