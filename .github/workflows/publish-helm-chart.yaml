@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install Helm
-        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           version: v3.13.2
 
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install Helm
-        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
           version: "v3.13.2"
 
@@ -138,20 +138,20 @@ jobs:
           name: "${{ needs.version_and_package.outputs.PACKAGE_NAME }}"
 
       - name: Login to Octopus
-        uses: OctopusDeploy/login@e39e03d07630f363bdccd6c7ad4eb28e0ea8a184 # v2.0.0
+        uses: OctopusDeploy/login@5e2331a069ebc144b20ded22766dfce025dd9e73 # v2.0.2
         with:
           server: ${{ vars.OCTOPUS_SERVER }}
           service_account_id: ${{ secrets.OCTOPUS_SERVICE_ACCOUNT }}
 
       - name: Push helm chart to Octopus Deploy 🐙
-        uses: OctopusDeploy/push-package-action@c97226f7dc0e4fa3bd2fba9b5b30b2ac8a32048c # v4.0.2
+        uses: OctopusDeploy/push-package-action@ea60aac3adb75cdb8c9707958177049fc72ea608 # v4.0.7
         with:
           space: "${{ vars.DEPLOY_K8S_OWNERS_SPACE_NAME }}"
           packages: ${{ needs.version_and_package.outputs.PACKAGE_NAME }}
           overwrite_mode: IgnoreIfExists
 
       - name: Create a release in Octopus Deploy 🐙
-        uses: OctopusDeploy/create-release-action@41621dd2b319b1dbf1f537913f2d18992eff6fd5 # v4.1.4
+        uses: OctopusDeploy/create-release-action@d01f523c3b9121a68f212f2f589fb00cb5709671 # v4.2.6
         with:
           space: "${{ vars.DEPLOY_K8S_OWNERS_SPACE_NAME }}"
           project: "Octopus ArgoCd Gateway"
