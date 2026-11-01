@@ -460,6 +460,7 @@ func registerGateway(req *CreateApplicationsRequest) (*octopusdeploy.RegisterArg
 		req.ArgoCDWebUIUrl,
 		req.Environments,
 		req.Tenants,
+		false,
 	)
 }
 
