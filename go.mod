@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/OctopusDeploy/go-octopusdeploy/v2 v2.122.0
 	github.com/argoproj/argo-cd/v3 v3.0.0
-	github.com/argoproj/gitops-engine v0.7.1-0.20250314164314-7258614f5041
+	github.com/argoproj/gitops-engine v0.7.3
 	github.com/dave/jennifer v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/go-cmp v0.7.0
@@ -30,6 +30,8 @@ require (
 	k8s.io/client-go v0.32.2
 	sigs.k8s.io/yaml v1.4.0
 )
+
+require github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
@@ -64,7 +66,6 @@ require (
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
