@@ -24,7 +24,7 @@ jobs:
             **.proto
       - name: Buf
         if: steps.changed-files-specific.outputs.any_changed == 'true'
-        uses: bufbuild/buf-action@85aebf73123b5c15fd5528aaecbf9129cddf7fa7 # v1.6.0
+        uses: bufbuild/buf-action@37ac33d8960807670a6e9719080e885197b09cc6 # v1.7.0
         with:
           push: false
           lint: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'buf skip lint') }}
