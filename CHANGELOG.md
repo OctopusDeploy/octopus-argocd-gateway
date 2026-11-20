@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/v2.2.1...v2.2.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* bump octopus-grpc to v0.6.0 ([#18](https://github.com/OctopusDeploy/octopus-argocd-gateway/issues/18)) ([30a4a9f](https://github.com/OctopusDeploy/octopus-argocd-gateway/commit/30a4a9fc16a039861587873c0cd3371e05a7569e))
+
 ## [2.2.1](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/v2.2.0...v2.2.1) (2026-10-21)
 
 
