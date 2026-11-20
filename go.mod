@@ -43,7 +43,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OctopusDeploy/go-octodiff v1.0.0 // indirect
-	github.com/OctopusDeploy/octopus-grpc/go v0.5.1
+	github.com/OctopusDeploy/octopus-grpc/go v0.6.0
 	github.com/ProtonMail/go-crypto v1.1.5 // indirect
 	github.com/argoproj/pkg v0.13.7-0.20250305113207-cbc37dc61de5 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

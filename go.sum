@@ -32,8 +32,8 @@ github.com/OctopusDeploy/go-octodiff v1.0.0 h1:U+ORg6azniwwYo+O44giOw6TiD5USk8S4
 github.com/OctopusDeploy/go-octodiff v1.0.0/go.mod h1:Mze0+EkOWTgTmi8++fyUc6r0aLZT7qD9gX+31t8MmIU=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.122.0 h1:AIxfHgUjbKMSD/VhHmZIeDZlCAhye7c3fDBrjz3M27I=
 github.com/OctopusDeploy/go-octopusdeploy/v2 v2.122.0/go.mod h1:y/waaa0IIa4fYeALqKd3NDoNlwhEbMLkrDPS8D+nRxg=
-github.com/OctopusDeploy/octopus-grpc/go v0.5.1 h1:JVTSwXqp+lj7HNNxiZFeb1iIba7/JAIcUlc6inIH/ic=
-github.com/OctopusDeploy/octopus-grpc/go v0.5.1/go.mod h1:ksvYBu95AwTwuOwo0eqAm4o1+mLQsLg+wT0APZYUhmg=
+github.com/OctopusDeploy/octopus-grpc/go v0.6.0 h1:7+4c5rd1uBULHRThTlzJnX9zrJ+JLVsJgyetFgPUzP8=
+github.com/OctopusDeploy/octopus-grpc/go v0.6.0/go.mod h1:ksvYBu95AwTwuOwo0eqAm4o1+mLQsLg+wT0APZYUhmg=
 github.com/ProtonMail/go-crypto v1.1.5 h1:eoAQfK2dwL+tFSFpr7TbOaPNUbPiJj4fLYwwGE1FQO4=
 github.com/ProtonMail/go-crypto v1.1.5/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 h1:uvdUDbHQHO85qeSydJtItA4T55Pw6BtAejd0APRJOCE=
