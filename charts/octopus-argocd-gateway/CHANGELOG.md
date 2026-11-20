@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/octopus-argocd-gateway-chart-v2.4.0...octopus-argocd-gateway-chart-v2.5.0) (2026-11-20)
+
+
+### Features
+
+* **main:** release 2.2.2 ([#19](https://github.com/OctopusDeploy/octopus-argocd-gateway/issues/19)) ([f69d960](https://github.com/OctopusDeploy/octopus-argocd-gateway/commit/f69d9601df22643852facbba3f1f22720a6eff6f))
+
 ## [2.4.0](https://github.com/OctopusDeploy/octopus-argocd-gateway/compare/octopus-argocd-gateway-chart-v2.3.0...octopus-argocd-gateway-chart-v2.4.0) (2026-10-21)
 
 
